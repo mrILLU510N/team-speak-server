@@ -1,0 +1,15 @@
+[Unit]
+Description=TS3-Server
+After=network.target
+[Service]
+WorkingDirectory=/home/ts/
+User=ts
+Group=sudo, ts
+Type=forking
+ExecStart=/home/ts/ts3server_startscript.sh start inifile=ts3server.ini
+ExecStop=/home/ts/ts3server_startscript.sh stop
+PIDFile=/home/ts/ts3server.pid
+RestartSec=10
+Restart=always
+[Install]
+WantedBy=multi-user.target

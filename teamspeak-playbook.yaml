@@ -1,0 +1,81 @@
+---
+- name: Installation TeamSpeak Server
+  hosts: ts
+
+  tasks:
+  - name: Create group
+    group:
+      name: ts
+      state: present
+    become: true  
+
+  - name: Create user
+    ansible.builtin.user:
+      name: ts
+      groups:
+      - ts 
+      - sudo
+      state: present
+    become: true
+
+  - name: Install packages
+    ansible.builtin.apt:
+      name:
+      - unzip
+      - tar
+      - bzip2
+      state: present
+      update_cache: yes
+    become: true
+
+  - name: Download TeamSpeak 
+    ansible.builtin.get_url:
+      url: https://files.teamspeak-services.com/releases/server/3.13.7/teamspeak3-server_linux_amd64-3.13.7.tar.bz2
+      dest: /tmp
+  
+  - name: Unzip achive
+    ansible.builtin.unarchive:
+      src: /tmp/teamspeak3-server_linux_amd64-3.13.7.tar.bz2
+      dest: /home/ts
+      remote_src: yes
+      owner: ts
+      group: ts
+      mode: 777
+      extra_opts: [--strip-components=1]
+    become: true
+
+  - name:  Delete archive
+    ansible.builtin.file:
+      path: /tmp/teamspeak3-server_linux_amd64-3.13.7.tar.bz2
+      state: absent
+    become: true
+  
+  - name: Create license file 
+    ansible.builtin.file:
+      path: /home/ts/.ts3server_license_accepted
+      state: touch 
+      owner: ts
+      group: ts
+    become: true
+
+  - name: Add TeamSpeak as service
+    ansible.builtin.copy:
+      src: ./teamspeak.service
+      dest: /lib/systemd/system/teamspeak.service
+      owner: ts
+      group: ts
+      mode: 777
+    become: true
+
+  - name: Start TeamSpeak server
+    ansible.builtin.systemd:
+      name: teamspeak.service
+      enabled: true
+      state: started
+    become: true
+    become_user: ts
+
+  - name: Get secret key
+    ansible.builtin.command: "cat /home/teamspeak/logs/ts3server_* | grep -o 'token.*' | cut -f2- -d="
+    become: yes
+...
